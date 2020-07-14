@@ -1,6 +1,6 @@
 package main
 
-import "github.com/recluse-games/deviant-directory/internal/server"
+import server "github.com/recluse-games/deviant-directory/internal"
 
 func main() {
 	server.Start()

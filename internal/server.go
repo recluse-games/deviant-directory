@@ -95,7 +95,7 @@ func (s *server) CreatePlayer(ctx context.Context, em *pb.Player) (*pb.Player, e
 		return nil, status.Error(codes.InvalidArgument, "Name is empty, please try again")
 	}
 
-	result, err := getPlayer(em.Id)
+	result, _ := getPlayer(em.Id)
 	if result == nil {
 		result, err := setPlayer(em)
 
