@@ -43,7 +43,7 @@ func Start() {
 	// Create a new instance of our Redis client.
 	DB = NewDBClient()
 
-	listen, err := net.Listen("tcp", "127.0.0.1:50051")
+	listen, err := net.Listen("tcp", "0.0.0.0:50051")
 	if err != nil {
 		log.Fatalf("Could not listen on port: %v", err)
 	}
@@ -82,7 +82,12 @@ func (s *server) UpdatePlayer(ctx context.Context, em *pb.Player) (*pb.Player, e
 		return nil, status.Error(codes.InvalidArgument, "ID is empty, please try again")
 	}
 
-	result, err := setPlayer(em)
+	result, err := getPlayer(em.Id)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "Player with ID does not exist, please try again")
+	}
+
+	result, err = setPlayer(em)
 
 	return result, err
 }
@@ -95,8 +100,8 @@ func (s *server) CreatePlayer(ctx context.Context, em *pb.Player) (*pb.Player, e
 		return nil, status.Error(codes.InvalidArgument, "Name is empty, please try again")
 	}
 
-	result, _ := getPlayer(em.Id)
-	if result == nil {
+	_, err := getPlayer(em.Id)
+	if err != nil {
 		result, err := setPlayer(em)
 
 		return result, err
@@ -118,24 +123,24 @@ func (s *server) DeletePlayer(ctx context.Context, em *pb.ID) (*pb.ID, error) {
 		return nil, err
 	}
 
-	err = DB.Del(em.String()).Err()
+	err = DB.Del(em.Id).Err()
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "Unable to delete player from ID")
+		return nil, status.Error(codes.NotFound, "Unable to delete player from ID")
 	}
 
-	return em, status.Error(codes.InvalidArgument, "Name is already taken, please try again")
+	return em, nil
 }
 
 func getPlayer(id *pb.ID) (*pb.Player, error) {
-	var result *pb.Player
+	result := &pb.Player{}
 
 	options := protojson.UnmarshalOptions{
 		AllowPartial: true,
 	}
 
-	in, err := DB.Get(id.String()).Result()
+	in, err := DB.Get(id.Id).Result()
 	if err != nil {
-		log.Printf("Error retrieving player with id: %s, error: %v", id.String(), err)
+		log.Printf("Error retrieving player with id: %s, error: %v", id.Id, err)
 		return nil, err
 	}
 
@@ -160,9 +165,9 @@ func setPlayer(player *pb.Player) (*pb.Player, error) {
 		return nil, err
 	}
 
-	err = DB.Set(player.Id.String(), string(result), 0).Err()
+	err = DB.Set(player.Id.Id, string(result), 0).Err()
 	if err != nil {
-		log.Printf("Error writing player update to database with id: %s, error: %v", player.Id.String(), err)
+		log.Printf("Error writing player update to database with id: %s, error: %v", player.Id.Id, err)
 		return nil, err
 	}
 
