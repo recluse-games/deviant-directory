@@ -111,7 +111,7 @@ func (s *server) CreatePlayer(ctx context.Context, em *pb.Player) (*pb.Player, e
 }
 
 // DeletePlayer deletes a player from a ID
-// Returns the new player and error (if any)
+// Returns the ID and error (if any)
 func (s *server) DeletePlayer(ctx context.Context, em *pb.ID) (*pb.ID, error) {
 	// If Name is empty, return specific error
 	if em == nil {
